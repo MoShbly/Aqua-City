@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Aqua City — Admin Dashboard</title>
+  <meta name="description" content="Admin panel for the Aqua City interactive animal experience. Manage animals, 3D models, QR codes and track visitor scans." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Animated background ─────────────────────────────────────── -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bubble" style="--s:80px;--x:10%;--d:0s;--dur:14s"></div>
+    <div class="bubble" style="--s:50px;--x:25%;--d:2s;--dur:18s"></div>
+    <div class="bubble" style="--s:120px;--x:50%;--d:4s;--dur:12s"></div>
+    <div class="bubble" style="--s:40px;--x:70%;--d:1s;--dur:20s"></div>
+    <div class="bubble" style="--s:90px;--x:85%;--d:3s;--dur:16s"></div>
+  </div>
+
+  <!-- ── Mobile Top Bar ──────────────────────────────────────────── -->
+  <div class="mobile-topbar" id="mobile-topbar">
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">☰</button>
+    <div class="mobile-brand">
+      <span>🌊</span>
+      <span class="mobile-brand-text">Aqua City</span>
+    </div>
+    <div style="width:44px"></div>
+  </div>
+
+  <!-- Sidebar dimmer overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🌊</div>
+      <div>
+        <div class="brand-name">Aqua City</div>
+        <div class="brand-sub">Admin Panel</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" id="nav-animals" onclick="showPage('animals')">
+        <span class="nav-icon">🐠</span>
+        <span>Animals</span>
+      </button>
+      <button class="nav-item" id="nav-add" onclick="showPage('add')">
+        <span class="nav-icon">➕</span>
+        <span>Add Animal</span>
+      </button>
+      <button class="nav-item" id="nav-qrcodes" onclick="showPage('qrcodes')">
+        <span class="nav-icon">📷</span>
+        <span>QR Codes</span>
+      </button>
+      <button class="nav-item" id="nav-api" onclick="showPage('api')">
+        <span class="nav-icon">🔗</span>
+        <span>API Docs</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="server-status" id="server-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main content ────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Toast notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ── Dashboard Page ──────────────────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-sub">Welcome back — here's your aquarium at a glance</p>
+        </div>
+        <button class="btn btn-primary" onclick="loadDashboard()">
+          <span>↻</span> Refresh
+        </button>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card loading-card"><div class="stat-shimmer"></div></div>
+        <div class="stat-card loading-card"><div class="stat-shimmer"></div></div>
+        <div class="stat-card loading-card"><div class="stat-shimmer"></div></div>
+        <div class="stat-card loading-card"><div class="stat-shimmer"></div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📈 Scans by Day</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="scansChart"></canvas>
+            <div class="chart-empty" id="chart-empty" style="display:none">
+              <span>🐟</span>
+              <p>No scan data yet. Scans will appear here once visitors start using the app.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">🏆 Top Animals</h2>
+          </div>
+          <div id="top-animals-list">
+            <div class="empty-state">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📂 By Category</h2>
+          </div>
+          <div id="category-list">
+            <div class="empty-state">Loading...</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">⏱️ Recent Scans</h2>
+          </div>
+          <div id="recent-scans-list">
+            <div class="empty-state">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Animals Page ────────────────────────────────────────── -->
+    <section class="page" id="page-animals">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Animals</h1>
+          <p class="page-sub">Manage all animals in your aquarium</p>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('add')">
+          <span>+</span> Add Animal
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <input type="text" class="search-input" id="animal-search" placeholder="🔍  Search animals..." oninput="filterAnimals()" />
+          <select class="select-input" id="category-filter" onchange="filterAnimals()">
+            <option value="">All Categories</option>
+            <option value="fish">🐟 Fish</option>
+            <option value="mammal">🐬 Mammal</option>
+            <option value="reptile">🐢 Reptile</option>
+            <option value="bird">🦅 Bird</option>
+            <option value="invertebrate">🦑 Invertebrate</option>
+            <option value="amphibian">🐸 Amphibian</option>
+          </select>
+        </div>
+        <div class="animals-grid" id="animals-grid">
+          <div class="empty-state">Loading animals...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Add Animal Page ─────────────────────────────────────── -->
+    <section class="page" id="page-add">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" id="form-title">Add New Animal</h1>
+          <p class="page-sub">Fill in the details for your new exhibit</p>
+        </div>
+      </div>
+
+      <form class="animal-form" id="animal-form" onsubmit="submitAnimalForm(event)">
+        <div class="grid-2">
+          <!-- Left column -->
+          <div class="form-column">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">🐠 Basic Information</h2></div>
+
+              <div class="form-group">
+                <label class="form-label" for="f-name">Animal Name <span class="required">*</span></label>
+                <input type="text" class="form-input" id="f-name" placeholder="e.g. Clownfish" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="f-scientific">Scientific Name</label>
+                <input type="text" class="form-input" id="f-scientific" placeholder="e.g. Amphiprioninae" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="f-category">Category <span class="required">*</span></label>
+                  <select class="form-input" id="f-category" required>
+                    <option value="">Select category</option>
+                    <option value="fish">🐟 Fish</option>
+                    <option value="mammal">🐬 Mammal</option>
+                    <option value="reptile">🐢 Reptile</option>
+                    <option value="bird">🦅 Bird</option>
+                    <option value="invertebrate">🦑 Invertebrate</option>
+                    <option value="amphibian">🐸 Amphibian</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="f-status">Conservation Status</label>
+                  <select class="form-input" id="f-status">
+                    <option value="Least Concern">Least Concern</option>
+                    <option value="Near Threatened">Near Threatened</option>
+                    <option value="Vulnerable">Vulnerable</option>
+                    <option value="Endangered">Endangered</option>
+                    <option value="Critically Endangered">Critically Endangered</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="f-habitat">Habitat</label>
+                <input type="text" class="form-input" id="f-habitat" placeholder="e.g. Coral reefs, Pacific Ocean" />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="f-diet">Diet</label>
+                  <input type="text" class="form-input" id="f-diet" placeholder="e.g. Omnivore" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="f-lifespan">Lifespan</label>
+                  <input type="text" class="form-input" id="f-lifespan" placeholder="e.g. 6-10 years" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="f-size">Size</label>
+                <input type="text" class="form-input" id="f-size" placeholder="e.g. 7-15 cm" />
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">📝 Description & Facts</h2></div>
+
+              <div class="form-group">
+                <label class="form-label" for="f-description">Description</label>
+                <textarea class="form-input form-textarea" id="f-description" rows="4"
+                  placeholder="Describe this animal's behavior, appearance, and interesting traits..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Fun Facts</label>
+                <div id="fun-facts-list"></div>
+                <button type="button" class="btn btn-ghost" onclick="addFunFact()">
+                  + Add Fun Fact
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div class="form-column">
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">🖼️ Animal Photo</h2></div>
+              <div class="upload-zone" id="image-zone" onclick="document.getElementById('f-image').click()"
+                ondragover="dragOver(event,'image-zone')" ondragleave="dragLeave('image-zone')"
+                ondrop="dropFile(event,'image-zone','f-image')">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">Click or drag & drop</div>
+                <div class="upload-sub">JPG, PNG, WebP — max 10MB</div>
+                <input type="file" id="f-image" accept=".jpg,.jpeg,.png,.webp" style="display:none"
+                  onclick="event.stopPropagation()"
+                  onchange="previewFile('f-image','image-preview','image-zone')" />
+              </div>
+              <img id="image-preview" class="file-preview" style="display:none" alt="Animal preview" />
+            </div>
+
+            <div class="card" id="model-upload-card">
+              <div class="card-header">
+                <h2 class="card-title">🎮 3D Model</h2>
+                <span class="badge badge-info">Optional — can upload later</span>
+              </div>
+              <div class="upload-zone" id="model-zone" onclick="document.getElementById('f-model').click()"
+                ondragover="dragOver(event,'model-zone')" ondragleave="dragLeave('model-zone')"
+                ondrop="dropFile(event,'model-zone','f-model')">
+                <div class="upload-icon">🎮</div>
+                <div class="upload-text">Click or drag & drop</div>
+                <div class="upload-sub">.glb or .gltf only — max 200MB</div>
+                <input type="file" id="f-model" accept=".glb,.gltf" style="display:none"
+                  onclick="event.stopPropagation()"
+                  onchange="previewModelFile('f-model','model-zone')" />
+              </div>
+              <div id="model-preview-name" class="file-name-badge" style="display:none"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><h2 class="card-title">ℹ️ About QR Code</h2></div>
+              <div class="info-box">
+                <p>A QR code will be <strong>automatically generated</strong> when you save the animal.
+                  Visitors scan it with the Aqua City app to see the 3D model and information card.</p>
+                <p style="margin-top:0.5rem">You can download and print the QR code from the <strong>QR Codes</strong> section.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" onclick="resetForm()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submit-btn">
+            <span id="submit-icon">✓</span>
+            <span id="submit-text">Save Animal</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── QR Codes Page ───────────────────────────────────────── -->
+    <section class="page" id="page-qrcodes">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">QR Codes</h1>
+          <p class="page-sub">Download and print QR codes for your animal exhibits</p>
+        </div>
+        <button class="btn btn-primary" onclick="printAllQR()">🖨️ Print All</button>
+      </div>
+
+      <div class="animals-grid" id="qr-grid">
+        <div class="empty-state">Loading QR codes...</div>
+      </div>
+    </section>
+
+    <!-- ── API Docs Page ───────────────────────────────────────── -->
+    <section class="page" id="page-api">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">API Reference</h1>
+          <p class="page-sub">Connect your Unity app using these endpoints</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">🔗 Base URL</h2></div>
+        <div class="api-url-box" id="api-base-url">
+          <code id="base-url-text">Loading...</code>
+          <button class="btn btn-ghost btn-sm" onclick="copyBaseUrl()">Copy</button>
+        </div>
+      </div>
+
+      <div class="api-endpoints" id="api-endpoints"></div>
+    </section>
+
+  </main>
+
+  <!-- ── Animal Detail Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="animal-modal" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ── Confirm Delete Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="confirm-modal" onclick="closeConfirmModal()">
+    <div class="modal modal-sm" onclick="event.stopPropagation()">
+      <div class="confirm-icon">🗑️</div>
+      <h3 class="confirm-title">Delete Animal?</h3>
+      <p class="confirm-body" id="confirm-body">This will permanently delete the animal and all associated files. This cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

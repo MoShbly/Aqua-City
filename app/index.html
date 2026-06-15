@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#050d1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Aqua City" />
+  <title>Aqua City — Interactive Aquarium</title>
+  <meta name="description" content="Scan QR codes to discover sea animals, view 3D models and learn amazing facts at Aqua City." />
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- model-viewer for 3D + AR -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+  <!-- QR scanner -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+  <!-- ── Animated ocean background ─────────────────────────── -->
+  <div class="ocean-bg" aria-hidden="true">
+    <div class="wave wave-1"></div>
+    <div class="wave wave-2"></div>
+    <div class="wave wave-3"></div>
+    <div class="fish-bg">🐟</div>
+    <div class="fish-bg fish-2">🐠</div>
+    <div class="fish-bg fish-3">🦑</div>
+    <div class="bubble-p" style="--x:8%;--d:0s;--s:12px"></div>
+    <div class="bubble-p" style="--x:20%;--d:2s;--s:8px"></div>
+    <div class="bubble-p" style="--x:40%;--d:1s;--s:16px"></div>
+    <div class="bubble-p" style="--x:60%;--d:3s;--s:10px"></div>
+    <div class="bubble-p" style="--x:75%;--d:0.5s;--s:14px"></div>
+    <div class="bubble-p" style="--x:90%;--d:2.5s;--s:9px"></div>
+  </div>
+
+  <!-- ── Toast ─────────────────────────────────────────────── -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE 1 — HOME
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="page active" id="page-home">
+    <div class="home-inner">
+
+      <header class="home-header">
+        <div class="logo-wrap">
+          <div class="logo-icon">🌊</div>
+          <div>
+            <h1 class="logo-title">Aqua City</h1>
+            <p class="logo-sub">Interactive Aquarium</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="hero">
+        <div class="hero-emoji">🐠</div>
+        <h2 class="hero-title">Discover the<br /><span class="gradient-text">Ocean World</span></h2>
+        <p class="hero-desc">Scan a QR code at any exhibit to learn about the animal and see its 3D model come to life.</p>
+      </div>
+
+      <button class="scan-btn" id="home-scan-btn" onclick="startScan()">
+        <span class="scan-btn-icon">📷</span>
+        <span class="scan-btn-text">Scan QR Code</span>
+        <span class="scan-btn-arrow">→</span>
+      </button>
+
+      <div class="recent-section" id="recent-section" style="display:none">
+        <h3 class="section-label">Recently Viewed</h3>
+        <div class="recent-list" id="recent-list"></div>
+      </div>
+
+      <div class="categories-section">
+        <h3 class="section-label">Explore by Category</h3>
+        <div class="categories-grid" id="categories-grid">
+          <div class="cat-chip loading-chip">🐟</div>
+          <div class="cat-chip loading-chip">🐬</div>
+          <div class="cat-chip loading-chip">🐢</div>
+          <div class="cat-chip loading-chip">🦑</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE 2 — SCANNER
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="page" id="page-scanner">
+    <div class="scanner-header">
+      <button class="back-btn" onclick="goHome()" aria-label="Go back">←</button>
+      <span class="scanner-title">Scan QR Code</span>
+    </div>
+
+    <div class="scanner-body">
+      <div class="scanner-frame-wrap">
+        <div id="qr-reader"></div>
+        <div class="scanner-overlay">
+          <div class="scanner-corner tl"></div>
+          <div class="scanner-corner tr"></div>
+          <div class="scanner-corner bl"></div>
+          <div class="scanner-corner br"></div>
+          <div class="scanner-line"></div>
+        </div>
+      </div>
+      <p class="scanner-hint">Point the camera at the QR code on any animal exhibit card</p>
+    </div>
+
+    <div class="scanner-loading" id="scanner-loading" style="display:none">
+      <div class="spinner"></div>
+      <p>Loading animal data...</p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE 3 — ANIMAL DETAIL
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="page" id="page-animal">
+    <div id="animal-content"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PAGE 4 — BROWSE (category / list)
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="page" id="page-browse">
+    <div class="browse-header">
+      <button class="back-btn" onclick="goHome()" aria-label="Go back">←</button>
+      <span class="scanner-title" id="browse-title">All Animals</span>
+    </div>
+    <div class="browse-list" id="browse-list">
+      <div class="loading-state">Loading...</div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODEL-VIEWER FULLSCREEN OVERLAY
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="model-overlay" id="model-overlay">
+    <button class="model-close" onclick="closeModel()" aria-label="Close 3D viewer">✕</button>
+    <div class="model-title-bar" id="model-title-bar"></div>
+    <model-viewer
+      id="main-model-viewer"
+      camera-controls
+      auto-rotate
+      shadow-intensity="1"
+      environment-image="neutral"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-scale="auto"
+      style="width:100%;height:100%;background:transparent"
+    ></model-viewer>
+    <div class="model-ar-hint">
+      <span>💡</span> Tap the AR button to place this animal in your real world
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
