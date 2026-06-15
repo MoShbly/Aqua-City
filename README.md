@@ -1,3 +1,7 @@
+Proje Ekibi:
+- muhammed elşibli - 220541609
+- Suzan Battal - 220541614 
+
 # 🌊 Aqua City — Backend API + Admin Panel
 
 Interactive animal exhibit system with QR codes and 3D model support.
