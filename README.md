@@ -70,3 +70,4 @@ Call this endpoint from Unity to get:
 4. Open firewall port 3000 (or use nginx reverse proxy on port 80)
 5. Update `.env` with your server's IP if needed
 # Aqua-City
+# Aqua-City
